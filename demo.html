@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f4f8ff">
+  <title>EventPilot v3.0 · 多单位全场景事件冲突与归档系统</title>
+  <style>
+@import "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap";
+:root{--navy:#10213d;--blue:#176beb;--blue2:#0e57c6;--sky:#eaf3ff;--paper:#fff;--bg:#f5f8fc;--line:#dfe7f1;--text:#17233a;--muted:#718096;--red:#df4b51;--orange:#e98528;--green:#178a62;--purple:#7755d9;--shadow:0 12px 36px #22497e17}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);margin:0;font-family:DM Sans,PingFang SC,sans-serif;font-size:14px}
+button,input,select{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline-offset:2px;outline:3px solid #176beb38}
+.app-shell{grid-template-columns:236px 1fr;min-height:100vh;display:grid}
+.sidebar{color:#dce9fb;z-index:30;background:#0d1f3a;flex-direction:column;height:100vh;padding:24px 16px;display:flex;position:sticky;top:0}
+.brand{align-items:center;gap:11px;padding:0 8px 24px;display:flex}
+.brand-mark{color:#fff;background:linear-gradient(145deg,#3989ff,#176beb);border-radius:11px;place-items:center;width:38px;height:38px;display:grid;box-shadow:0 8px 20px #176beb59}
+.brand b{font:700 17px Manrope;display:block}
+.brand span,.sidebar-foot span{color:#7891b4;margin-top:2px;font-size:11px;display:block}
+.workspace{background:#122847;border:1px solid #233c60;border-radius:10px;margin-bottom:22px;padding:10px 11px;position:relative}
+.workspace span{color:#718aab;text-transform:uppercase;letter-spacing:.09em;font-size:10px;display:block}
+.workspace b{margin-top:3px;font-size:13px;display:block}
+
+.sidebar nav{gap:5px;display:grid}
+.sidebar nav button{color:#8fa6c4;text-align:left;background:0 0;border:0;border-radius:8px;align-items:center;gap:12px;padding:11px 13px;display:flex;width:100%}.sidebar nav button svg{width:18px;height:18px;flex:none}.sidebar nav button span{flex:1}.sidebar nav button span:first-of-type{flex:0 0 auto}
+.sidebar nav button:hover{color:#fff;background:#142b4c}
+.sidebar nav button.active{color:#fff;background:#176beb;box-shadow:0 7px 18px #0349b047}
+.sidebar nav button span{flex:1}
+.sidebar nav em{color:#fff;background:#ef5b60;border-radius:20px;padding:2px 6px;font-size:10px;font-style:normal}
+.sidebar-foot{border-top:1px solid #233858;align-items:center;gap:9px;margin-top:auto;padding:18px 7px 0;display:flex}
+.sidebar-foot b{font-size:12px}
+.sidebar-foot small{color:#5a7aa0;font-size:9px;display:block;margin-top:1px}
+.sync-dot,.live-dot{background:#29c786;border-radius:50%;width:8px;height:8px;box-shadow:0 0 0 4px #29c7861f}
+main{min-width:0;position:relative}
+.topbar{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);z-index:20;background:#ffffffeb;align-items:center;height:68px;padding:0 34px;display:flex;position:sticky;top:0}
+.topbar>div:first-of-type{gap:6px;display:flex}
+.breadcrumb{color:#9aa8ba}
+.top-actions{align-items:center;gap:7px;margin-left:auto;display:flex}
+.icon-btn{color:#68778c;background:0 0;border:0;border-radius:9px;place-items:center;width:38px;height:38px;display:grid}
+.icon-btn:hover{color:var(--blue);background:#edf3fa}
+.icon-btn svg{width:18px}
+.unit-btn{background:#f0f5fe;border:1px solid #d2e2fa;border-radius:8px;align-items:center;gap:8px;padding:0 14px;height:38px;display:flex;position:relative;cursor:pointer;font-size:12px;font-weight:600;color:var(--blue)}
+.unit-btn svg{width:14px;color:var(--muted)}
+.unit-dropdown{z-index:50;background:#fff;border:1px solid var(--line);border-radius:11px;width:210px;padding:6px;position:absolute;top:calc(100%+6px);right:0;box-shadow:0 12px 30px #18345a29}
+.unit-dropdown button{text-align:left;background:0 0;border:0;border-radius:6px;align-items:center;gap:10px;width:100%;padding:9px 10px;display:flex;font-size:12px}
+.unit-dropdown button:hover{background:#f1f6fd}
+.unit-dropdown button.active{color:#fff;background:var(--blue)}
+.unit-dropdown .u-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.unit-dropdown .u-label{flex:1}
+.unit-dropdown .u-label b{font-size:11px;display:block}
+.unit-dropdown .u-label small{color:var(--muted);font-size:9px;display:block;margin-top:1px}
+.unit-dropdown button.active .u-label small{color:#ffffffb3}
+.avatar{color:#1359b6;background:#dceaff;border-radius:50%;place-items:center;width:34px;height:34px;margin-left:5px;font-size:11px;font-weight:700;display:grid}
+.page-wrap{max-width:1500px;margin:auto;padding:34px 38px 60px}
+.page-intro{justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:28px;display:flex}
+.page-intro>div>span,.panel-title>div>span,.drawer-title>span{color:var(--blue);letter-spacing:.14em;font-size:10px;font-weight:700}
+.page-intro h1{letter-spacing:-.035em;margin:7px 0;font:800 34px/1.15 Manrope,PingFang SC}
+.page-intro p{color:var(--muted);margin:0;font-size:14px}
+.primary{border:1px solid #0000;border-radius:8px;justify-content:center;align-items:center;gap:8px;padding:9px 20px;font-weight:600;display:inline-flex;box-shadow:0 6px 15px #176beb30;color:#fff;background:var(--blue)}.primary,.secondary{border:1px solid #0000;border-radius:8px;justify-content:center;align-items:center;gap:8px;height:40px;padding:0 16px;font-weight:600;display:inline-flex}.primary{color:#fff;background:var(--blue);box-shadow:0 6px 15px #176beb30}.primary:hover{background:var(--blue2)}.primary:disabled{opacity:.45;cursor:not-allowed}.secondary{color:var(--text);border-color:var(--line);background:#fff}.secondary:hover{background:#f8fbff;border-color:var(--line)}
+.primary{color:#fff;background:var(--blue);box-shadow:0 6px 15px #176beb30}
+
+.primary:disabled{opacity:.45;cursor:not-allowed}
+.secondary{color:#33445f;border-color:var(--line);background:#fff}
+
+.primary svg,.secondary svg{width:16px}
+.time-ribbon{color:#fff;background:linear-gradient(115deg,#0c2446,#102f5c);border-radius:14px;margin-bottom:18px;padding:18px 24px 15px;box-shadow:0 15px 30px #102f5c24}
+.ribbon-head{justify-content:space-between;align-items:center;font-size:12px;font-weight:600;display:flex}
+.ribbon-head>div{align-items:center;gap:9px;display:flex}
+.ribbon-head button{color:#9ebbe2;background:0 0;border:0;align-items:center;gap:6px;display:flex}
+.ribbon-track{grid-template-columns:1fr 1fr 1fr;height:82px;margin-top:16px;display:grid;position:relative}
+.track-zone{border-top:4px solid}
+.track-zone.danger{border-color:#e65561}
+.track-zone.warn{border-color:#e89a47}
+.track-zone.calm{border-color:#3b83df}
+.time-pin{justify-items:center;display:grid;position:absolute;top:-7px;transform:translate(-8px)}
+.time-pin i{z-index:2;background:#fff;border:4px solid #102c54;border-radius:50%;width:16px;height:16px}
+.time-pin.red i{background:#e65561}
+.time-pin.orange i{background:#e89a47}
+.time-pin.blue i{background:#4c91e8}
+.time-pin b{margin-top:7px;font-size:12px}
+.time-pin span{color:#91acd0;white-space:nowrap;font-size:10px}
+.metrics{grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;display:grid}
+.metric{border:1px solid var(--line);background:#fff;border-radius:11px;align-items:center;gap:14px;padding:17px;display:flex}
+.metric-icon{width:40px;height:40px;color:var(--blue);background:#edf4ff;border-radius:9px;place-items:center;display:grid}
+.metric-icon.orange{color:var(--orange);background:#fff4e9}
+.metric-icon.purple{color:var(--purple);background:#f2efff}
+.metric-icon.green{color:var(--green);background:#eaf8f3}
+.metric-icon svg{width:19px}
+.metric span,.metric small{color:var(--muted);font-size:11px;display:block}
+.metric strong{margin:1px 0;font:700 24px Manrope;display:block}
+.dashboard-grid{grid-template-columns:1.4fr 1fr;gap:18px;margin-bottom:18px;display:grid}
+.panel{border:1px solid var(--line);background:#fff;border-radius:11px}
+.panel-title{justify-content:space-between;align-items:center;padding:18px 20px 9px;display:flex}
+.panel-title h2{margin:3px 0;font:700 17px Manrope}
+.panel-title button{color:var(--blue);background:0 0;border:0;align-items:center;gap:5px;font-size:12px;display:flex}
+.panel-title button svg{width:14px}
+.chart{height:240px;padding:10px 20px 20px}
+.legend{color:var(--muted);align-items:center;gap:6px;font-size:11px;display:flex}
+.legend i{background:var(--blue);border-radius:2px;width:8px;height:8px}
+.attention{padding-bottom:10px}
+.task{background:#f8fafd;border-radius:8px;grid-template-columns:3px 1fr auto;align-items:center;gap:13px;margin:4px 18px;padding:12px;display:grid}
+.task>i{background:var(--blue);border-radius:3px;width:3px;height:40px}
+.task>i.red{background:var(--red)}
+.task>i.orange{background:var(--orange)}
+.task>i.purple{background:var(--purple)}
+.task span,.task small{color:var(--muted);font-size:10px;display:block}
+.task b{margin:3px 0;display:block}
+.task button,.row-more{color:#8a99ad;background:0 0;border:0}
+.table-pane{overflow:auto;border-radius:0 0 11px 11px}
+table{border-collapse:collapse;width:100%;min-width:850px}
+th{text-align:left;letter-spacing:.05em;text-transform:uppercase;color:#8997aa;background:#f8fafd;border-top:1px solid #edf1f6;border-bottom:1px solid #edf1f6;padding:10px 16px;font-size:10px;font-weight:600}
+td{border-bottom:1px solid #edf1f6;padding:12px 16px;font-size:12px}
+tbody tr{transition:all .15s}
+tbody tr:hover{cursor:pointer;background:#f8fbff}
+tbody tr:last-child td{border-bottom:0}
+.badge{color:var(--blue);white-space:nowrap;background:#eaf3ff;border-radius:20px;align-items:center;gap:6px;padding:5px 8px;font-size:10px;font-weight:600;display:inline-flex}
+.badge i{background:currentColor;border-radius:50%;width:6px;height:6px}
+.badge.red{color:#d9424b;background:#fff0f1}
+.badge.orange{color:#d87417;background:#fff3e7}
+.badge.green{color:#138057;background:#eaf8f2}
+.badge.purple{color:#6f4ed1;background:#f2efff}
+.search{border:1px solid var(--line);background:#fff;border-radius:8px;flex:1;align-items:center;gap:8px;max-width:440px;height:40px;padding:0 12px;display:flex}
+.search svg{color:#8c9caf;width:17px}
+.search input{background:0 0;border:0;outline:0;width:100%}
+.filter-tabs{border-bottom:1px solid var(--line);gap:24px;display:flex;overflow:auto}
+.filter-tabs button{color:var(--muted);background:0 0;border:0;padding:11px 2px;position:relative;white-space:nowrap}
+.filter-tabs button.active{color:var(--blue);font-weight:600}
+.filter-tabs button.active:after{content:"";background:var(--blue);height:2px;position:absolute;bottom:-1px;left:0;right:0}
+.rule-grid{grid-template-columns:repeat(3,1fr);gap:17px;display:grid}
+.rule-card{border:1px solid var(--line);background:#fff;border-radius:11px;padding:18px;box-shadow:0 3px 8px #21416908}
+.rule-card.default{border-style:dashed}
+.rule-card-head{align-items:center;gap:11px;display:flex}
+.rule-symbol{width:38px;height:38px;color:var(--blue);background:#eaf3ff;border-radius:8px;place-items:center;font-size:11px;font-weight:800;display:grid}
+.rule-card-head>div:nth-child(2){flex:1}
+.rule-card-head span{color:var(--blue);text-transform:uppercase;letter-spacing:.08em;font-size:9px}
+.rule-card-head h3{margin:3px 0;font-size:14px}
+.switch input{display:none}
+.switch i{background:#ccd5e1;border-radius:20px;width:36px;height:20px;transition:all .2s;display:block;position:relative}
+.switch i:after{content:"";background:#fff;border-radius:50%;width:16px;height:16px;transition:all .2s;position:absolute;top:2px;left:2px;box-shadow:0 1px 4px #899}
+.switch input:checked+i{background:var(--blue)}
+.switch input:checked+i:after{left:18px}
+.rule-scope{background:#f7f9fc;border-radius:7px;margin:16px 0;padding:10px}
+.rule-scope span{color:var(--muted);font-size:9px;display:block}
+.rule-scope b{font-size:11px}
+.rule-timing{grid-template-columns:1fr 1fr;gap:8px;display:grid}
+.rule-timing>div{border:1px solid #e7edf4;border-radius:7px;gap:8px;padding:10px;display:flex}
+.rule-timing svg{width:15px;color:var(--blue);flex:none}
+.rule-timing span{color:var(--muted);font-size:9px}
+.rule-timing b{color:var(--text);margin-top:3px;font-size:11px;display:block}
+.rule-levels{border-bottom:1px solid var(--line);gap:12px;padding:17px 0;display:flex}
+.rule-levels span{color:#62728a;align-items:center;gap:5px;font-size:9px;display:flex}
+.rule-levels i{background:var(--blue);border-radius:50%;width:7px;height:7px}
+.rule-levels i.orange{background:var(--orange)}
+.rule-levels i.red{background:var(--red)}
+.rule-card footer{color:var(--muted);justify-content:space-between;align-items:center;padding-top:13px;font-size:9px;display:flex}
+.rule-card footer button{color:var(--blue);background:0 0;border:0;gap:5px;font-size:10px;display:flex}
+.rule-grid{grid-template-columns:repeat(3,1fr);gap:17px;display:grid}
+.arch-card{border:1px solid var(--line);background:#fff;border-radius:11px;overflow:hidden}
+.arch-diagram{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border-bottom:1px solid var(--line);min-height:180px}
+.arch-layer{padding:24px 20px;text-align:center;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.arch-layer:last-child{border:0}
+.arch-layer .layer-symbol{width:32px;height:32px;margin:0 auto 10px;border-radius:8px;place-items:center;display:grid}
+.arch-layer .layer-symbol svg{width:16px}
+.arch-layer h4{margin:0 0 4px;font-size:12px;font-weight:700}
+.arch-layer p{color:var(--muted);margin:0;font-size:9px;line-height:1.5}
+.arch-connector-row{display:flex;gap:8px;padding:14px 18px;flex-wrap:wrap}
+.conn-chip{border:1px solid var(--line);border-radius:20px;align-items:center;gap:5px;padding:5px 10px;font-size:9px;font-weight:600;display:inline-flex;background:#f8fafd}
+.conn-chip .dot{width:5px;height:5px;border-radius:50%;display:inline-block}
+.conn-chip .dot.green{background:var(--green)}
+.conn-chip .dot.blue{background:var(--blue)}
+.conn-chip .dot.orange{background:var(--orange)}
+.arch-units{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:20px}
+.unit-card{border:1px solid var(--line);border-radius:11px;padding:18px;text-align:center;transition:all .15s;cursor:pointer}
+.unit-card:hover{border-color:var(--blue);box-shadow:0 4px 12px #176beb18}
+.unit-card.active{background:var(--sky);border-color:var(--blue)}
+.unit-card .u-badge{width:36px;height:36px;border-radius:8px;margin:0 auto 8px;place-items:center;display:grid;font-size:12px;font-weight:800}
+.unit-card h4{margin:0;font-size:13px}
+.unit-card p{color:var(--muted);margin:4px 0 0;font-size:9px;line-height:1.4}
+.connector-grid{grid-template-columns:repeat(2,1fr);gap:14px;display:grid}
+.connector-card{border:1px solid var(--line);background:#fff;border-radius:11px;padding:18px}
+.connector-card .c-icon{width:32px;height:32px;border-radius:7px;place-items:center;display:grid;float:left;margin-right:12px}
+.connector-card .c-icon svg{width:16px}
+.connector-card h4{margin:0 0 3px;font-size:13px}
+.connector-card p{color:var(--muted);margin:0 0 8px;font-size:10px;line-height:1.5}
+.connector-card .protocol{background:#f0f5fe;color:var(--blue);border-radius:4px;padding:3px 7px;font-size:9px;font-weight:600;display:inline-block}
+.connector-card .units{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
+.connector-card .units span{background:#f3f6fa;color:#4a5a72;border-radius:4px;padding:2px 6px;font-size:8px}
+.flow-row{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;align-items:center;gap:0;margin:20px 0;padding:0 10px}
+.flow-box{border:1px solid var(--line);border-radius:8px;padding:14px 12px;text-align:center;background:#fafcff}
+.flow-box .f-icon{height:24px;margin-bottom:4px;place-items:center;display:grid}
+.flow-box .f-icon svg{width:18px;color:var(--muted)}
+.flow-box b{font-size:10px;display:block}
+.flow-box small{color:var(--muted);font-size:8px;display:block;margin-top:2px}
+.flow-arrow{color:#bcc9db;font-size:18px;text-align:center;display:flex;align-items:center;justify-content:center;padding:0 4px;font-weight:300}
+.drawer{background:#fff;flex-direction:column;width:min(520px,100vw);display:flex;position:absolute;top:0;bottom:0;right:0;box-shadow:-15px 0 50px #091c372e}
+.drawer.open{display:flex}
+.drawer-head{border-bottom:1px solid var(--line);align-items:center;gap:10px;height:65px;padding:0 20px;display:flex}
+.drawer-head .close-btn{color:var(--muted);background:0 0;border:0;margin-left:auto;font-size:18px;cursor:pointer}
+.drawer-body{padding:22px 28px;overflow:auto;flex:1}
+.drawer-body .info{margin-bottom:16px}
+.drawer-body .info span{color:var(--muted);font-size:10px;display:block;margin-bottom:2px}
+.drawer-body .info b{font-size:12px}
+.info-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.api-spec{background:#f8fafd;border:1px solid var(--line);border-radius:8px;padding:14px;margin:12px 0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;line-height:1.6;overflow:auto;max-height:260px}
+.api-spec .key{color:var(--blue)}
+.api-spec .string{color:var(--green)}
+.hidden{display:none!important}
+.toast{color:#fff;z-index:100;background:#10233f;border-radius:9px;align-items:center;gap:9px;padding:13px 18px;font-size:12px;animation:.25s toastIn;display:flex;position:fixed;bottom:25px;right:26px;box-shadow:0 10px 30px #0a1f3d40}
+.toast svg{width:17px;color:#4cd49c;flex:none}
+@keyframes toastIn{0%{opacity:0;transform:translateY(10px)}}
+.mono{color:#42526b;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.rule-impact-note{color:#3e5878;background:#eef6ff;border:1px solid #d2e4fa;border-radius:9px;align-items:center;gap:11px;margin-bottom:14px;padding:12px 16px;display:flex}
+.rule-impact-note svg{width:19px;color:var(--blue);flex:none}
+.rule-impact-note b,.rule-impact-note span{display:block}
+.rule-impact-note b{font-size:11px}
+.rule-impact-note span{color:#6b7e96;margin-top:2px;font-size:10px}
+.file-box{border:1px solid var(--line);border-radius:8px;align-items:center;gap:10px;padding:12px;display:flex;margin-top:18px}
+.file-box svg{color:var(--blue);width:18px;flex:none}
+.file-box div{flex:1}
+.file-box b,.file-box span{font-size:10px;display:block}
+.file-box span{color:var(--muted);margin-top:3px}
+.file-box button{color:var(--blue);background:0 0;border:0}
+.timeline{padding:25px 35px}
+.timeline>div{border-left:1px solid #d6e1ee;padding:0 0 15px 16px;position:relative}
+.timeline i{background:var(--blue);border-radius:50%;width:9px;height:9px;position:absolute;top:4px;left:-5px}
+.timeline span,.timeline small{color:var(--muted);font-size:10px;display:block}
+.timeline b{margin:4px 0;font-size:12px;display:block}
+.mobile-menu{display:none}
+@media(width<=1050px){.metrics,.rule-grid,.arch-units,.connector-grid{grid-template-columns:1fr 1fr}.flow-row{grid-template-columns:1fr;gap:6px}.flow-arrow{transform:rotate(90deg)}.arch-diagram{grid-template-columns:1fr 1fr}}
+@media(width<=760px){.app-shell{display:block}.sidebar{transition:all .25s;position:fixed;left:-250px;z-index:40}.sidebar.open{left:0}.mobile-menu{display:grid}.topbar{padding:0 14px}.page-wrap{padding:24px 15px}.page-intro{flex-direction:column}.page-intro h1{font-size:28px}.metrics,.dashboard-grid,.rule-grid,.arch-units,.connector-grid{grid-template-columns:1fr}.drawer{width:100vw}.arch-diagram{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// ─── SVG ICONS ────────────────────────────────────────────────────────────────
+const I = {
+  dashboard: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg>',
+  library: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M8 7h4M8 10h4M8 13h2"/></svg>',
+  upload: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M6 7l4-4 4 4"/><path d="M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2"/></svg>',
+  rules: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>',
+  connectors: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h3M13 10h3"/><rect x="7" y="6" width="6" height="8" rx="1"/><path d="M10 6V4M10 16v2"/></svg>',
+  graph: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2"/><circle cx="14" cy="10" r="2"/><circle cx="6" cy="14" r="2"/><path d="M8 7l5 2M8 13l5-3"/></svg>',
+  archive: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h14v2H3z"/><path d="M4 6v9a1 1 0 001 1h10a1 1 0 001-1V6"/><path d="M8 10h4"/></svg>',
+  overview: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h14v14H3z"/><path d="M7 3v14M3 10h14"/></svg>',
+  chevron: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 8l3 3 3-3"/></svg>',
+  chevronDown: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 8l4 4 4-4"/></svg>',
+  search: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="5"/><path d="M13 13l4 4"/></svg>',
+  plus: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>',
+  refresh: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 7l3-3M4 13l-3 3"/><path d="M17 4v4h-4M3 16v-4h4"/><path d="M16 10a6 6 0 11-5-5.9"/></svg>',
+  clock: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>',
+  bell: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3a5 5 0 00-5 5v3l-2 3h14l-2-3V8a5 5 0 00-5-5z"/><path d="M8 16a2 2 0 004 0"/></svg>',
+  document: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2h6l4 4v11a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M11 2v4h4"/></svg>',
+  check: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l4 4 8-8"/></svg>',
+  alert: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2a8 8 0 100 16 8 8 0 000-16z"/><path d="M10 6v4M10 12v.5"/></svg>',
+  file: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h8l4 4v10a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M12 3v4h4"/></svg>',
+  layer1: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 3v14M3 10h14"/></svg>',
+  layer2: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l7-4 7 4-7 4-7-4z"/><path d="M3 9l7-4 7 4"/></svg>',
+  layer3: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="5" r="2"/><circle cx="5" cy="15" r="2"/><circle cx="15" cy="15" r="2"/><path d="M10 7v6M7 14l2-2M13 14l-2-2"/></svg>',
+  layer4: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12v3H4z"/><path d="M6 7v7M14 7v7M4 14h12"/></svg>',
+  menu: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 5h12M4 10h12M4 15h12"/></svg>',
+  camera: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6a1 1 0 011-1h3l2-3h4l2 3h3a1 1 0 011 1v9a1 1 0 01-1 1H3a1 1 0 01-1-1V6z"/><circle cx="10" cy="11" r="3"/></svg>',
+  location: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 18s-6-5.5-6-9a6 6 0 0112 0c0 3.5-6 9-6 9z"/><circle cx="10" cy="9" r="2"/></svg>',
+  speaker: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L5 8H2v4h3l4 4V4z"/><path d="M14 7a4 4 0 010 6M17 4a8 8 0 010 12"/></svg>',
+  mobile: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="10" height="16" rx="2"/><path d="M9 15h2"/></svg>',
+  plug: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10V6a2 2 0 014 0v4M10 10V6a2 2 0 014 0v4"/><path d="M6 10h8v2a4 4 0 01-8 0v-2z"/></svg>',
+  wifi: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 0110 0M3 9a10 10 0 0114 0M1 6a13 13 0 0118 0"/><circle cx="10" cy="16" r="1"/></svg>',
+  eye: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 10s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7z"/><circle cx="10" cy="10" r="2.5"/></svg>',
+};
+
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+const UNIT_COLORS = ['#176beb','#1a5276','#6c3483','#a04000','#b03a2e','#1a8a5c','#2e86c1'];
+const UNITS = [
+  { id:'gov', name:'政务服务', color:UNIT_COLORS[0], desc:'XX市政务服务数据管理局' },
+  { id:'police', name:'公安', color:UNIT_COLORS[1], desc:'治安管理·110接处警·执法办案' },
+  { id:'procuratorate', name:'检察院', color:UNIT_COLORS[2], desc:'检察监督·公益诉讼·信访接待' },
+  { id:'court', name:'法院', color:UNIT_COLORS[3], desc:'审判执行·立案信访·审限监督' },
+  { id:'prison', name:'监狱', color:UNIT_COLORS[4], desc:'狱政管理·刑罚执行·安全巡查' },
+  { id:'hospital', name:'医院', color:UNIT_COLORS[5], desc:'医疗纠纷·不良事件·传染病报告' },
+  { id:'school', name:'学校', color:UNIT_COLORS[6], desc:'校园安全·欺凌防治·心理危机' },
+];
+
+const NAV = [
+  { id:'overview', label:'架构总览', icon:I.overview },
+  { id:'dashboard', label:'指挥台', icon:I.dashboard },
+  { id:'monitoring', label:'AI监控预警', icon:I.camera },
+  { id:'tracking', label:'人员轨迹', icon:I.location },
+  { id:'library', label:'事件档案库', icon:I.library },
+  { id:'rules', label:'规则配置', icon:I.rules },
+  { id:'connectors', label:'数据源接入', icon:I.connectors },
+  { id:'graph', label:'关联图谱', icon:I.graph },
+  { id:'archive', label:'归档工作台', icon:I.archive },
+];
+
+const UNIT_DATA = {
+  gov: {
+    events:[{name:'XX市智慧交通项目招标投诉',id:'EVT-2026-001',type:'信访投诉',status:'待处理',person:'张明',date:'2026-08-15',conflict:1},{name:'XX区环卫服务合同纠纷',id:'EVT-2026-002',type:'合同纠纷',status:'已归档',person:'李芳',date:'2026-08-10',conflict:0},{name:'XX工地安全事故报告',id:'EVT-2026-003',type:'安全事故',status:'处理中',person:'王强',date:'2026-08-18',conflict:2},{name:'XX街道违建拆除行政争议',id:'EVT-2026-004',type:'行政处罚',status:'待处理',person:'赵敏',date:'2026-08-20',conflict:1},{name:'XX环保专项资金审计发现',id:'EVT-2026-005',type:'审计发现',status:'处理中',person:'陈晓',date:'2026-08-12',conflict:3}],
+    metrics:{events:18,conflicts:5,pending:7,archived:6},chartData:[3,8,4,6,2,1],
+    tasks:[{title:'XX市智慧交通项目招标投诉',meta:'张明 · 冲突待处理',date:'法规冲突',tone:'red'},{title:'XX环保专项资金审计发现',meta:'陈晓 · 3项证据需补充',date:'证据不足',tone:'purple'},{title:'XX工地安全事故报告',meta:'王强 · 等待法规审核',date:'法规审核中',tone:'orange'}],
+    timeline:[{date:'08-15',label:'招标投诉',level:'red'},{date:'08-18',label:'安全事故',level:'orange'},{date:'08-20',label:'违建争议',level:'orange'}],
+    rules:[{name:'招标投诉法规校对',scope:'事件类型 = 招标投诉',days:30,levels:['首次提醒','紧急提醒'],enabled:!0},{name:'合同纠纷法规校对',scope:'事件类型 = 合同纠纷',days:45,levels:['首次提醒','重点提醒'],enabled:!0},{name:'通用法规校对规则',scope:'未命中专属规则',days:60,levels:['首次提醒'],enabled:!0}],monitoring:{cameras:4,today_alerts:{fighting:0,lingering:1,climbing:0,fall:0,fence:2},channels:{popup:true,speaker:false,app:true,api:true}},tracking:{persons:0,zones:0,devices:0,active_devices:0}  },
+  police: {
+    events:[{name:'XX派出所接警—聚众纠纷',id:'P-2026-001',type:'警情',status:'处理中',person:'刘队长',date:'2026-08-20',conflict:0},{name:'XX小区盗窃案',id:'P-2026-002',type:'治安案件',status:'待处理',person:'张警官',date:'2026-08-19',conflict:1},{name:'XX路交通肇事逃逸',id:'P-2026-003',type:'警情',status:'处理中',person:'李警官',date:'2026-08-18',conflict:2},{name:'重复报警—广场舞噪音',id:'P-2026-004',type:'投诉',status:'待处理',person:'王警官',date:'2026-08-17',conflict:3}],
+    metrics:{events:47,conflicts:8,pending:12,archived:27},chartData:[5,12,8,6,4,2],
+    tasks:[{title:'重复报警—广场舞噪音',meta:'王警官 · 第4次报警',date:'自动提级',tone:'red'},{title:'XX小区盗窃案',meta:'张警官 · 监控需调取',date:'证据不足',tone:'purple'},{title:'XX路交通肇事逃逸',meta:'李警官 · 涉案车辆追踪',date:'处理中',tone:'orange'}],
+    timeline:[{date:'08-17',label:'重复报警',level:'red'},{date:'08-19',label:'盗窃案',level:'orange'},{date:'08-20',label:'聚众纠纷',level:'orange'}],
+    rules:[{name:'警情到场时限检查',scope:'事件类型 = 警情',days:0,levels:['紧急提醒'],enabled:!0,note:'到场时限 ≤ 15 分钟'},{name:'重复报警提级规则',scope:'行为 = 重复报警',days:1,levels:['首次提醒','紧急提醒'],enabled:!0,note:'同一事件 ≥3 次自动提级'},{name:'治安案件处置时效',scope:'事件类型 = 治安案件',days:30,levels:['首次提醒','重点提醒','紧急提醒'],enabled:!0}],monitoring:{cameras:12,today_alerts:{fighting:2,lingering:5,climbing:0,fall:1,fence:8},channels:{popup:true,speaker:true,app:true,api:true}},tracking:{persons:0,zones:0,devices:0,active_devices:0}  },
+  procuratorate: {
+    events:[{name:'XX区环保局不作为举报',id:'J-2026-001',type:'公益诉讼线索',status:'处理中',person:'周检察官',date:'2026-08-16',conflict:1},{name:'信访人XXX申请司法救助',id:'J-2026-002',type:'信访接待',status:'待处理',person:'吴检察官',date:'2026-08-19',conflict:0},{name:'XX法院民事判决监督申请',id:'J-2026-003',type:'案件监督',status:'处理中',person:'郑检察官',date:'2026-08-14',conflict:2}],
+    metrics:{events:12,conflicts:3,pending:5,archived:4},chartData:[2,3,1,4,2,0],
+    tasks:[{title:'XX区环保局不作为举报',meta:'周检察官 · 15日初查时限',date:'公益诉讼',tone:'red'},{title:'信访人XXX申请司法救助',meta:'吴检察官 · 7日程序回复',date:'信访',tone:'orange'}],
+    timeline:[{date:'08-14',label:'监督申请',level:'blue'},{date:'08-16',label:'公益诉讼',level:'red'},{date:'08-19',label:'信访',level:'orange'}],
+    rules:[{name:'信访 7 日回复规则',scope:'事件类型 = 信访接待',days:7,levels:['首次提醒','紧急提醒'],enabled:!0},{name:'公益诉讼线索初查规则',scope:'事件类型 = 公益诉讼线索',days:15,levels:['首次提醒','重点提醒'],enabled:!0}],monitoring:{cameras:2,today_alerts:{fighting:0,lingering:0,climbing:0,fall:0,fence:0},channels:{popup:true,speaker:false,app:false,api:false}},tracking:{persons:0,zones:0,devices:0,active_devices:0}  },
+  court: {
+    events:[{name:'XX建设工程合同纠纷',id:'C-2026-001',type:'民事诉讼',status:'审理中',person:'李法官',date:'2026-07-10',conflict:1},{name:'XX执行案款超期未发还',id:'C-2026-002',type:'执行',status:'待处理',person:'王执行员',date:'2026-08-01',conflict:2},{name:'XX行政赔偿申请',id:'C-2026-003',type:'行政诉讼',status:'立案审查',person:'赵法官',date:'2026-08-18',conflict:0}],
+    metrics:{events:35,conflicts:6,pending:10,archived:19},chartData:[4,5,6,3,2,1],
+    tasks:[{title:'XX执行案款超期未发还',meta:'王执行员 · 超期 20 天',date:'执行预警',tone:'red'},{title:'XX建设工程合同纠纷',meta:'李法官 · 审限剩余 25 天',date:'审限预警',tone:'orange'}],
+    timeline:[{date:'07-10',label:'合同纠纷',level:'blue'},{date:'08-01',label:'执行超期',level:'red'},{date:'08-18',label:'行政赔偿',level:'orange'}],
+    rules:[{name:'审限不足 30 日预警',scope:'事件类型 = 民事诉讼',days:30,levels:['重点提醒','紧急提醒'],enabled:!0},{name:'执行案款超期检测',scope:'事件类型 = 执行',days:15,levels:['首次提醒','紧急提醒'],enabled:!0}],monitoring:{cameras:6,today_alerts:{fighting:0,lingering:2,climbing:0,fall:0,fence:0},channels:{popup:true,speaker:false,app:false,api:true}},tracking:{persons:0,zones:0,devices:0,active_devices:0}  },
+  prison: {
+    events:[{name:'三监区夜点名缺勤异常',id:'PR-2026-001',type:'狱内违规',status:'处理中',person:'王管教',date:'2026-08-20',conflict:1},{name:'在押人员XXX健康异常',id:'PR-2026-002',type:'健康异常',status:'待处理',person:'李狱医',date:'2026-08-19',conflict:0},{name:'二监区安全巡查—门禁异常',id:'PR-2026-003',type:'安全巡查',status:'处理中',person:'张值班民警',date:'2026-08-18',conflict:2},{name:'在押人员XXX心理危机干预',id:'PR-2026-004',type:'心理危机',status:'待处理',person:'赵心理咨询师',date:'2026-08-17',conflict:1}],
+    metrics:{events:23,conflicts:5,pending:8,archived:10},chartData:[3,5,4,6,3,2],
+    tasks:[{title:'三监区夜点名缺勤异常',meta:'王管教 · 本月第3次',date:'狱内违规',tone:'red'},{title:'二监区安全巡查—门禁异常',meta:'张值班民警 · AB门异常',date:'安全预警',tone:'red'},{title:'在押人员XXX心理危机干预',meta:'赵心理咨询师 · 评估中',date:'心理危机',tone:'purple'}],
+    timeline:[{date:'08-17',label:'心理危机',level:'purple'},{date:'08-18',label:'门禁异常',level:'red'},{date:'08-19',label:'健康异常',level:'orange'},{date:'08-20',label:'点名缺勤',level:'red'}],
+    rules:[{name:'夜点名缺勤检查',scope:'事件类型 = 狱内违规',days:1,levels:['首次提醒','紧急提醒'],enabled:!0,note:'24h内 ≥3次 缺勤自动提级'},{name:'静默风险检测',scope:'行为 = 连续静默',days:0,levels:['紧急提醒'],enabled:!0,note:'10分钟连续静默标记'},{name:'单人单间隔离合规检查',scope:'事件类型 = 健康异常',days:1,levels:['重点提醒'],enabled:!0}],monitoring:{cameras:24,today_alerts:{fighting:3,lingering:8,climbing:1,fall:2,fence:12},channels:{popup:true,speaker:true,app:true,api:true}},tracking:{persons:860,zones:12,devices:860,active_devices:842}  },
+  hospital: {
+    events:[{name:'XX科室术后感染不良事件',id:'H-2026-001',type:'不良事件',status:'处理中',person:'李主任',date:'2026-08-18',conflict:2},{name:'患者XXX投诉—服务态度',id:'H-2026-002',type:'投诉',status:'待处理',person:'张护士长',date:'2026-08-20',conflict:0},{name:'发热门诊疑似传染病报告',id:'H-2026-003',type:'传染病报告',status:'已处理',person:'王院感',date:'2026-08-16',conflict:0}],
+    metrics:{events:15,conflicts:4,pending:6,archived:5},chartData:[2,4,3,1,3,2],
+    tasks:[{title:'XX科室术后感染不良事件',meta:'李主任 · 同类第2次',date:'不良事件',tone:'red'},{title:'患者XXX投诉—服务态度',meta:'张护士长 · 待处理',date:'投诉',tone:'orange'}],
+    timeline:[{date:'08-16',label:'传染病报告',level:'blue'},{date:'08-18',label:'不良事件',level:'red'},{date:'08-20',label:'投诉',level:'orange'}],
+    rules:[{name:'同类不良事件季度统计',scope:'事件类型 = 不良事件',days:90,levels:['重点提醒'],enabled:!0,note:'同类型 ≥3次/季度 启动RCA'},{name:'传染病 2h 直报检查',scope:'事件类型 = 传染病报告',days:0,levels:['紧急提醒'],enabled:!0},{name:'投诉升级医务科规则',scope:'事件类型 = 投诉',days:3,levels:['首次提醒','重点提醒'],enabled:!0}],monitoring:{cameras:8,today_alerts:{fighting:1,lingering:3,climbing:0,fall:1,fence:0},channels:{popup:true,speaker:true,app:true,api:false}},tracking:{persons:0,zones:0,devices:0,active_devices:0}  },
+  school: {
+    events:[{name:'XX中学欺凌线索报告',id:'S-2026-001',type:'校园欺凌',status:'处理中',person:'班主任刘老师',date:'2026-08-19',conflict:1},{name:'操场意外伤害事故',id:'S-2026-002',type:'意外伤害',status:'待处理',person:'校医陈医生',date:'2026-08-20',conflict:0},{name:'高三学生心理测评异常',id:'S-2026-003',type:'心理危机',status:'处理中',person:'心理教师王老师',date:'2026-08-18',conflict:1},{name:'食堂食品安全投诉',id:'S-2026-004',type:'舆情',status:'待处理',person:'后勤赵主任',date:'2026-08-17',conflict:0}],
+    metrics:{events:9,conflicts:2,pending:4,archived:3},chartData:[1,2,3,2,1,0],
+    tasks:[{title:'XX中学欺凌线索报告',meta:'班主任刘老师 · 24h首报',date:'校园欺凌',tone:'red'},{title:'高三学生心理测评异常',meta:'心理教师王老师 · 评估中',date:'心理危机',tone:'purple'},{title:'操场意外伤害事故',meta:'校医陈医生 · 待处理',date:'意外伤害',tone:'orange'}],
+    timeline:[{date:'08-17',label:'食品安全',level:'orange'},{date:'08-18',label:'心理危机',level:'purple'},{date:'08-19',label:'欺凌线索',level:'red'},{date:'08-20',label:'意外伤害',level:'orange'}],
+    rules:[{name:'欺凌线索 24h 首报规则',scope:'事件类型 = 校园欺凌',days:1,levels:['紧急提醒'],enabled:!0},{name:'连续缺勤家访提醒',scope:'行为 = 缺勤',days:3,levels:['首次提醒','重点提醒'],enabled:!0,note:'连续3天缺勤触发家访'},{name:'心理测评异常干预',scope:'事件类型 = 心理危机',days:1,levels:['紧急提醒'],enabled:!0}],monitoring:{cameras:16,today_alerts:{fighting:4,lingering:2,climbing:1,fall:0,fence:0},channels:{popup:true,speaker:true,app:true,api:false}},tracking:{persons:0,zones:0,devices:0,active_devices:0}  }
+};
+
+const CONNECTORS = [
+  {icon:I.document,name:'RDBMS 业务库',desc:'JDBC/ODBC 只读接入，支持执法办案、审判流程、狱务、HIS、学籍等现网系统',protocol:'JDBC / ODBC 只读',units:['公安','检察院','法院','监狱','医院','学校']},
+  {icon:I.connectors,name:'事件/工单平台',desc:'REST / GraphQL / Webhook 回调，实时接入12345、12315、12309、投诉工单等',protocol:'REST / Webhook',units:['政务服务','检察院','医院','学校']},
+  {icon:I.alert,name:'实时消息流',desc:'Kafka / MQTT 订阅，实时消费110警情、监控告警、门禁事件、工单新单',protocol:'Kafka / MQTT',units:['公安','监狱','医院']},
+  {icon:I.file,name:'文书/非结构化',desc:'对象存储 + OCR/NLP 管道，自动解析案卷、报告、证明、扫描件、录音',protocol:'对象存储 + 文件触发',units:['法院','检察院','监狱','政务服务']},
+  {icon:I.layer1,name:'物联网/视频元数据',desc:'设备API / GB/T 28181 / MQTT，只接收元数据（门禁、行为识别、防火告警）',protocol:'MQTT / GB/T 28181',units:['监狱','公安','学校']},
+  {icon:I.layer4,name:'外部专网接口',desc:'前置机 + 安全网关 + HTTPS，对接部委、政务专网、公检法数据交换平台',protocol:'HTTPS + 安全网关',units:['公安','检察院','法院','监狱']}
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let curUnit = 'gov', curPage = 'overview', sidebarOpen = false;
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function r() { document.getElementById('root').innerHTML = shell(); attach(); }
+
+function shell() {
+  const u = UNITS.find(x=>x.id===curUnit), d = data();
+  return `<div class="app-shell"><aside class="sidebar${sidebarOpen?' open':''}">
+<div class="brand"><div class="brand-mark">${I.overview}</div><div><b>EventPilot</b><span>事件冲突与归档系统 v3.0</span></div></div>
+<div class="workspace"><span>政务单位</span><b>${u.name}</b></div>
+<nav>${NAV.map(n=>`<button class="${curPage===n.id?'active':''}" data-page="${n.id}"><span>${n.icon}</span><span>${n.label}</span></button>`).join('')}</nav>
+<div class="sidebar-foot"><div class="sync-dot"></div><div><b>数据已同步</b><small>${u.name} · ${d.metrics.events} 件事件</small></div></div>
+</aside><main>${topbar(u)}<div class="page-wrap">${page()}</div></main></div>`;
+}
+
+function topbar(u) {
+  const p = NAV.find(n=>n.id===curPage);
+  return `<header class="topbar"><button class="icon-btn mobile-menu" onclick="ts()">${I.menu}</button>
+<div><span class="breadcrumb">${u.name} /</span><b> ${p?p.label:''}</b></div>
+<div class="top-actions"><div class="unit-btn" onclick="td()">${u.name}${I.chevronDown}
+<div id="unitDd" class="unit-dropdown hidden">${UNITS.map(x=>`<button class="${x.id===curUnit?'active':''}" data-unit="${x.id}"><span class="u-dot" style="background:${x.color}"></span><span class="u-label"><b>${x.name}</b><small>${x.desc}</small></span></button>`).join('')}</div></div>
+<button class="icon-btn">${I.bell}</button><div class="avatar">管</div></div></header>`;
+}
+
+function page() {
+  switch(curPage) {
+    case'overview':return overview();
+    case'dashboard':return dashboard();
+    case'monitoring':return monitoring();
+    case'tracking':return tracking();
+    case'library':return library();
+    case'rules':return rules();
+    case'connectors':return connectors();
+    case'graph':return graph();
+    case'archive':return archive();
+    default:return overview();
+  }
+}
+
+// ─── PAGES ────────────────────────────────────────────────────────────────────
+
+function overview() {
+  const d = data();
+  return `<div class="page-intro"><div><span>EVENTPILOT v3.0 架构总览</span><h1>通用内核 + 领域配置包</h1><p>一套事件内核，通过配置适配公安 · 检察 · 法院 · 监狱 · 医院 · 学校 · 政务</p></div><button class="primary" onclick="sp('dashboard')">${I.dashboard} 进入指挥台</button></div>
+<div class="arch-card" style="margin-bottom:18px"><div class="arch-diagram">
+<div class="arch-layer" style="background:#f0f7ff"><div class="layer-symbol" style="background:#eaf3ff;color:var(--blue)">${I.layer1}</div><h4>公共单位层</h4><p>公安·检察·法院·监狱<br>医院·学校·政务服务</p></div>
+<div class="arch-layer" style="background:#fff5f5"><div class="layer-symbol" style="background:#ffe8e8;color:var(--red)">${I.camera}</div><h4>安防硬件接入</h4><p>摄像头·电子手环·定位芯片<br>执法记录仪·物联网设备</p></div>
+<div class="arch-layer" style="background:#f5f8ff"><div class="layer-symbol" style="background:#f0f5fe;color:var(--blue)">${I.layer2}</div><h4>领域配置包</h4><p>热加载JSON配置<br>事件类型·规则·法规·数据源</p></div>
+<div class="arch-layer" style="background:#fafbff"><div class="layer-symbol" style="background:#f5f7fe;color:var(--blue)">${I.layer3}</div><h4>通用内核</h4><p>事件录入→AI要素提取<br>法规校对→冲突检测→归档</p></div>
+<div class="arch-layer" style="background:#f0f7ff"><div class="layer-symbol" style="background:#eaf3ff;color:var(--blue)">${I.layer4}</div><h4>数据源接入</h4><p>6类连接器，统一标准化<br>全部只读，AI不反写现网</p></div>
+</div><div class="arch-connector-row">
+<span class="conn-chip"><span class="dot green"></span> 公安·110接警REST</span>
+<span class="conn-chip"><span class="dot blue"></span> 检察·12309Webhook</span>
+<span class="conn-chip"><span class="dot green"></span> 法院·审判流程JDBC</span>
+<span class="conn-chip"><span class="dot orange"></span> 监狱·AB门禁MQTT</span>
+<span class="conn-chip"><span class="dot blue"></span> 医院·HIS/LIS只读</span>
+<span class="conn-chip"><span class="dot green"></span> 学校·学籍系统REST</span>
+<span class="conn-chip"><span class="dot" style="background:var(--red)"></span> 摄像头·电子手环·定位</span>
+</div></div>
+<div class="arch-units">${UNITS.map(u=>`<div class="unit-card${u.id===curUnit?' active':''}" onclick="su('${u.id}')"><div class="u-badge" style="background:${u.color}22;color:${u.color}">${u.name.charAt(0)}</div><h4>${u.name}</h4><p>${u.desc}</p></div>`).join('')}</div>
+<div class="dashboard-grid" style="margin-top:18px"><div class="panel"><div class="panel-title"><div><span>v3.0 核心升级</span><h2>从单域到多域</h2></div></div>
+<div style="padding:10px 20px 20px">
+<div class="task" style="margin:4px 0"><i style="background:var(--blue)"></i><div><span>新增</span><b>多单位切换</b><small>6类公共单位一键切换，数据与配置自动适配</small></div></div>
+<div class="task" style="margin:4px 0"><i style="background:var(--green)"></i><div><span>新增</span><b>数据源连接器</b><small>6类统一接入协议，现网系统只读接入，AI分析无需迁移</small></div></div>
+<div class="task" style="margin:4px 0"><i style="background:var(--orange)"></i><div><span>新增</span><b>三维规则引擎</b><small>单位级 > 事件类型级 > 兜底，新增行为/窗口/法规引用等维度</small></div></div>
+<div class="task" style="margin:4px 0"><i style="background:var(--purple)"></i><div><span>新增</span><b>领域配置包</b><small>JSON热加载，新单位接入仅需配置包，不改内核代码</small></div></div>
+<div class="task" style="margin:4px 0"><i style="background:var(--red)"></i><div><span>新增</span><b>AI监控预警 & 人员轨迹</b><small>AI行为分析(打架/滞留/攀爬/倒地) + 4通道告警联动 + 电子手环定位与区域管控</small></div></div>
+</div></div>
+<div class="panel"><div class="panel-title"><div><span>KEY METRICS</span><h2>${UNITS.find(x=>x.id===curUnit).name} 运行</h2></div></div>
+<div style="padding:10px 20px 20px"><div class="metrics" style="grid-template-columns:1fr 1fr;margin:0">
+${m('总事件',d.metrics.events,'全量','blue')}${m('冲突事件',d.metrics.conflicts,'待处理','orange')}${m('待归档',d.metrics.pending,'未结案','purple')}${m('已归档',d.metrics.archived,'本月完成','green')}
+</div></div></div></div>`;
+}
+function dashboard() {
+  const d = data(), u = UNITS.find(x=>x.id===curUnit);
+  return `<div class="page-intro"><div><span>${u.name.toUpperCase()} COMMAND CENTER</span><h1>${u.name} · 事件指挥台</h1><p>${u.desc}</p></div><button class="secondary" onclick="sp('library')">${I.library} 进入事件库</button></div>
+<section class="time-ribbon"><div class="ribbon-head"><div><span class="live-dot"></span> 未来30天事件冲突雷达</div><button onclick="sp('rules')">${I.rules} 查看规则</button></div>
+<div class="ribbon-track"><div class="track-zone danger"></div><div class="track-zone warn"></div><div class="track-zone calm"></div>${d.timeline.map((t,i)=>{const pct=5+i*30;const c=t.level==='red'?'red':t.level==='purple'?'red':t.level==='orange'?'orange':'blue';return`<div class="time-pin ${c}" style="left:${pct}%"><i></i><b>${t.date}</b><span>${t.label}</span></div>`;}).join('')}</div></section>
+<div class="metrics">${m('本月新增事件',d.metrics.events,'占总事件78%','blue')}${m('待处理冲突',d.metrics.conflicts,'按启用规则实时计算','orange')}${m('待确认事件要素',d.metrics.pending,'AI识别待核验','purple')}${m('本月已归档',d.metrics.archived,'比上月多6项','green')}</div>
+<div class="dashboard-grid"><div class="panel"><div class="panel-title"><div><span>冲突分布</span><h2>未来6个月</h2></div><div class="legend"><i></i>冲突数量</div></div><div class="chart">${chart(d.chartData)}</div></div>
+<div class="panel attention"><div class="panel-title"><div><span>需要你处理</span><h2>优先任务</h2></div><button onclick="sp('library')">全部事件</button></div>${d.tasks.map(t=>`<div class="task"><i class="${t.tone}"></i><div><span>${t.date}</span><b>${t.title}</b><small>${t.meta}</small></div><button>${I.chevron}</button></div>`).join('')}</div></div>`;
+}
+
+function library() {
+  const d = data(), u = UNITS.find(x=>x.id===curUnit);
+  return `<div class="page-intro"><div><span>${u.name} · EVENT ARCHIVE</span><h1>事件档案库</h1><p>统一管理事件、证据及其每一次处理记录。</p></div><button class="primary">${I.plus} 新建事件</button></div>
+<div class="search" style="margin-bottom:14px;max-width:100%">${I.search}<input placeholder="搜索事件名称、编号、责任人..."></div>
+<div class="table-pane"><table><thead><tr><th>事件名称</th><th>事件编号</th><th>类型</th><th>责任人</th><th>冲突</th><th>状态</th><th>时间</th></tr></thead>
+<tbody>${d.events.map(e=>`<tr onclick="sd('${e.id}')"><td><b>${e.name}</b></td><td class="mono" style="font-size:11px">${e.id}</td><td><span class="badge">${e.type}</span></td><td>${e.person}</td><td>${e.conflict>0?`<span class="badge red">${I.alert} ${e.conflict}</span>`:`<span class="badge green">${I.check} 无</span>`}</td><td><span class="badge ${e.status==='已归档'?'green':e.status==='处理中'?'orange':'purple'}">${e.status}</span></td><td style="color:var(--muted);font-size:11px">${e.date}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function rules() {
+  const d = data(), u = UNITS.find(x=>x.id===curUnit);
+  return `<div class="page-intro"><div><span>${u.name} · REGULATION ENGINE</span><h1>法规规则引擎</h1><p>按事件类型配置校对规则；没有专属规则时自动使用默认规则。</p></div><button class="secondary">${I.refresh} 查看运行记录</button></div>
+<div class="rule-impact-note">${I.alert}<div><b>三维规则引擎 · 多级命中</b><span>单位级（最高优先）> 事件类型级 > 默认兜底规则</span></div></div>
+<div class="rule-grid">${d.rules.map((r,i)=>`<div class="rule-card${!r.enabled?' disabled':''}"><div class="rule-card-head"><div class="rule-symbol">R${i+1}</div><div><span>${r.scope}</span><h3>${r.name}</h3></div><label class="switch"><input type="checkbox" ${r.enabled?'checked':''}><i></i></label></div><div class="rule-scope"><span>作用域</span><b>${r.scope}</b></div>${r.note?`<div class="rule-scope"><span>说明</span><b>${r.note}</b></div>`:''}<div class="rule-timing"><div>${I.clock}<div><span>检查周期</span><b>每 ${r.days>0?r.days+' 天':'即时'}${r.days===0?'（事件驱动）':''}</b></div></div><div>${I.bell}<div><span>提醒级别</span><b>${r.levels.join('·')}</b></div></div></div><div class="rule-levels">${r.levels.map(l=>`<span><i class="${l==='紧急提醒'?'red':l==='重点提醒'?'orange':'blue'}"></i>${l}</span>`).join('')}</div><footer><span>最后运行：今日09:00</span><button>${I.rules} 编辑</button></footer></div>`).join('')}
+<div class="rule-card default" style="place-items:center;display:grid;min-height:160px;cursor:pointer"><div style="text-align:center;color:var(--muted)">${I.plus}<h3 style="margin:8px 0 4px;font-size:14px">添加校对规则</h3><span style="font-size:10px">新增事件类型级规则</span></div></div></div>`;
+}
+
+function connectors() {
+  return `<div class="page-intro"><div><span>DATA SOURCE INTEGRATION</span><h1>数据源接入</h1><p>6类统一接入协议，各单位现网系统只读连接，AI分析不反向写入。</p></div><button class="secondary" onclick="t('连接器状态已刷新')">${I.refresh} 刷新状态</button></div>
+<div class="flow-row"><div class="flow-box"><div class="f-icon">${I.layer1}</div><b>业务数据源</b><small>现网系统</small></div><div class="flow-arrow">&rarr;</div><div class="flow-box" style="border-color:var(--blue)"><div class="f-icon">${I.connectors}</div><b>连接器</b><small>Connector</small></div><div class="flow-arrow">&rarr;</div><div class="flow-box"><div class="f-icon">${I.layer2}</div><b>标准化</b><small>Normalizer</small></div><div class="flow-arrow">&rarr;</div><div class="flow-box" style="border-color:var(--green)"><div class="f-icon">${I.layer3}</div><b>AI分析管线</b><small>要素提取·校对·图谱</small></div></div>
+<div class="connector-grid">${CONNECTORS.map(c=>`<div class="connector-card"><div class="c-icon" style="background:#eaf3ff;color:var(--blue)">${c.icon}</div><h4>${c.name}</h4><p>${c.desc}</p><span class="protocol">${c.protocol}</span><div class="units">${c.units.map(x=>`<span>${x}</span>`).join('')}</div></div>`).join('')}</div>
+<div class="panel" style="margin-top:18px"><div class="panel-title"><div><span>STANDARDIZED EVENT SCHEMA</span><h2>标准化事件模型</h2></div></div>
+<div class="api-spec" style="margin:0 20px 20px">{<br>  <span class="key">"source"</span>: {<br>    <span class="key">"unit"</span>: <span class="string">"监狱"</span>,<br>    <span class="key">"system"</span>: <span class="string">"狱务管理平台"</span>,<br>    <span class="key">"connector"</span>: <span class="string">"jdbc-reader"</span><br>  },<br>  <span class="key">"normalized"</span>: {<br>    <span class="key">"event_type"</span>: <span class="string">"狱内违规"</span>,<br>    <span class="key">"time"</span>: <span class="string">"2026-08-20T09:00:00Z"</span>,<br>    <span class="key">"subject"</span>: [{ <span class="key">"role"</span>: <span class="string">"在押人员"</span> }],<br>    <span class="key">"evidence_ref"</span>: [{ <span class="key">"type"</span>: <span class="string">"门禁记录"</span> }]<br>  },<br>  <span class="key">"ai_result"</span>: {<br>    <span class="key">"law_check"</span>: [{ <span class="key">"law"</span>: <span class="string">"监狱法"</span>, <span class="key">"judgment"</span>: <span class="string">"违规"</span>, <span class="key">"confidence"</span>: 0.94 }],<br>    <span class="key">"relations"</span>: [{ <span class="key">"from"</span>: <span class="string">"张某某"</span>, <span class="key">"to"</span>: <span class="string">"王强"</span>, <span class="key">"relation"</span>: <span class="string">"责任民警"</span> }]<br>  }<br>}</div></div>`;
+}
+
+function graph() {
+  const d = data(), u = UNITS.find(x=>x.id===curUnit);
+  return `<div class="page-intro"><div><span>${u.name} · RELATIONSHIP GRAPH</span><h1>关联图谱</h1><p>责任人-事件-证据-法规四类节点关系可视化。</p></div><button class="secondary" onclick="t('图谱已导出')">${I.document} 导出图谱</button></div>
+<div class="panel" style="min-height:420px;display:grid;place-items:center"><div style="text-align:center;padding:40px"><div class="brand-mark" style="width:56px;height:56px;margin:0 auto 12px;font-size:20px">${I.graph}</div>
+<h3 style="margin:0 0 6px;font-size:16px">${u.name} · 关联图谱</h3><p style="color:var(--muted);font-size:12px;max-width:500px;margin:0 auto 20px">展示${d.events.length}件事件、${d.events.length*2}位责任人、${d.metrics.conflicts}项法规冲突之间的关联关系</p>
+<div class="rule-grid" style="grid-template-columns:repeat(4,auto);gap:10px;justify-content:center"><span class="badge" style="font-size:11px;padding:8px 14px"><i style="background:var(--blue)"></i> 事件节点</span><span class="badge green" style="font-size:11px;padding:8px 14px;color:var(--green);background:#eaf8f2"><i style="background:var(--green)"></i> 人员节点</span><span class="badge orange" style="font-size:11px;padding:8px 14px;color:var(--orange);background:#fff3e7"><i style="background:var(--orange)"></i> 证据节点</span><span class="badge red" style="font-size:11px;padding:8px 14px;color:var(--red);background:#fff0f1"><i style="background:var(--red)"></i> 法规节点</span></div>
+<div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center">${d.events.slice(0,4).map(e=>`<span class="badge" style="font-size:10px;padding:6px 12px">${e.name}</span>`).join('')}</div></div></div>`;
+}
+
+function archive() {
+  const d = data(), u = UNITS.find(x=>x.id===curUnit);
+  return `<div class="page-intro"><div><span>${u.name} · ARCHIVE WORKBENCH</span><h1>归档工作台</h1><p>组卷、签章、审计导出，一键生成合规案卷。</p></div><button class="primary" onclick="t('案卷生成中...')">${I.plus} 新建案卷</button></div>
+<div class="dashboard-grid"><div class="panel" style="padding:20px"><h3 style="margin:0 0 14px;font-size:14px">待归档案卷</h3>${d.events.filter(e=>e.status!=='已归档').map(e=>`<div class="task" style="margin:4px 0"><i style="background:var(--orange)"></i><div><span>${e.date}</span><b>${e.name}</b><small>责任人：${e.person}</small></div><button class="primary" style="height:30px;padding:0 12px;font-size:10px">组卷</button></div>`).join('')}</div>
+<div class="panel" style="padding:20px"><h3 style="margin:0 0 14px;font-size:14px">已归档案卷</h3>${d.events.filter(e=>e.status==='已归档').map(e=>`<div class="task" style="margin:4px 0"><i style="background:var(--green)"></i><div><span>${e.date}</span><b>${e.name}</b><small>案卷号：ARC-${e.id}</small></div><button class="secondary" style="height:30px;padding:0 12px;font-size:10px">查看</button></div>`).join('')||'<p style="color:var(--muted);text-align:center;padding:30px 0">暂无已归档案卷</p>'}</div></div>`;
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+function monitoring() {
+  const d = data(), u = UNITS.find(x=>x.id===curUnit), m = d.monitoring, a = m.today_alerts;
+  const total = a.fighting + a.lingering + a.climbing + a.fall + a.fence;
+  const beh = [
+    ['打架斗殴','fighting','red',I.alert],['滞留危险区','lingering','orange',I.clock],
+    ['攀爬窗/围栏','climbing','red',I.alert],['倒地/晕厥','fall','red',I.alert],
+    ['越界/区域离开','fence','orange',I.location],
+  ];
+  const ch = [
+    {icon:I.alert,name:'弹框提醒',desc:'实时视频画面+告警信息弹框',k:'popup',color:'var(--blue)'},
+    {icon:I.speaker,name:'音响预警',desc:'外接音响播放提示音',k:'speaker',color:'var(--orange)'},
+    {icon:I.mobile,name:'APP推送',desc:'实时接收权限内告警事件',k:'app',color:'var(--green)'},
+    {icon:I.plug,name:'API联动',desc:'主动推送联动第三方平台',k:'api',color:'var(--purple)'},
+  ];
+  return `<div class="page-intro"><div><span>${u.name} · AI MONITORING</span><h1>AI 监控预警</h1><p>基于AI行为分析(打架/滞留/攀爬/倒地/越界) + 4通道告警联动。</p></div><button class="secondary" onclick="t('告警联动测试已触发')">${I.speaker} 测试告警联动</button></div>
+<div class="metrics">${m2('摄像头路数',m.cameras,'实时监控','blue')}${m2('今日告警',total,'AI行为识别','orange')}${m2('弹框提醒',m.channels.popup?'已开启':'已关闭','桌面端','purple')}${m2('音响/APP/API',[m.channels.speaker,m.channels.app,m.channels.api].filter(Boolean).length+'/3','联动通道','green')}</div>
+<div class="dashboard-grid"><div class="panel"><div class="panel-title"><div><span>BEHAVIOR RECOGNITION</span><h2>AI 行为识别（今日）</h2></div></div>
+<div style="padding:10px 20px 20px">${beh.map(b=>`<div class="task" style="margin:4px 0"><i style="background:${b[2]==='red'?'var(--red)':'var(--orange)'}"></i><div><span>${b[0]}</span><b>${a[b[1]]} 次</b><small>${a[b[1]]>0?'已触发告警':'正常'}</small></div><button class="badge ${a[b[1]]>0?'red':'green'}" style="font-size:10px">${a[b[1]]>0?'查看':'正常'}</button></div>`).join('')}</div></div>
+<div class="panel"><div class="panel-title"><div><span>ALERT CHANNELS</span><h2>4 通道告警联动</h2></div></div>
+<div style="padding:10px 20px 20px"><div class="connector-grid" style="grid-template-columns:1fr 1fr">${ch.map(c=>`<div class="connector-card" style="padding:14px"><div class="c-icon" style="background:${c.color}22;color:${c.color}">${c.icon}</div><h4>${c.name}</h4><p>${c.desc}</p><span class="protocol" style="background:${m.channels[c.k]?c.color+'22':''};color:${m.channels[c.k]?c.color:'var(--muted)'}">${m.channels[c.k]?'● 已启用':'○ 未启用'}</span></div>`).join('')}</div></div></div></div>`;
+}
+
+function tracking() {
+  const d = data(), u = UNITS.find(x=>x.id===curUnit), t = d.tracking;
+  const hasTrack = t.persons > 0;
+  const zones = [
+    {zone:'三监区',count:124,color:'var(--blue)'},{zone:'放风区',count:56,color:'var(--green)'},
+    {zone:'食堂',count:89,color:'var(--orange)'},{zone:'医疗楼',count:23,color:'var(--purple)'},
+    {zone:'劳动车间',count:312,color:'var(--muted)'},{zone:'隔离区',count:2,color:'var(--red)'},
+  ];
+  const evts = [
+    {t:'09:12',title:'越界告警 · 三监区',desc:'犯人HZ-2026-183 离开2米范围',cls:'red',lbl:'已触发'},
+    {t:'08:45',title:'滞留告警 · 劳动车间',desc:'犯人HZ-2026-091 滞留超5分钟',cls:'orange',lbl:'处理中'},
+    {t:'07:30',title:'区域接触告警',desc:'犯人HZ-2026-137 与HZ-2026-042 近距离接触',cls:'orange',lbl:'待确认'},
+    {t:'06:50',title:'出操点名完成',desc:'应到312人，实到312人，人脸识别全部通过',cls:'green',lbl:'已完成'},
+  ];
+  return `<div class="page-intro"><div><span>${u.name} · PERSONNEL TRACKING</span><h1>人员轨迹 & 区域管控</h1><p>电子手环定位 · 轨迹追踪 · 电子围栏 · 点名签到 · 接触分析</p></div><button class="secondary" onclick="t('轨迹数据已刷新')">${I.refresh} 刷新定位</button></div>
+${hasTrack?`
+<div class="metrics">${m2('在押人员',t.persons,'电子手环佩戴','blue')}${m2('活跃设备',t.active_devices,'在线率'+(t.persons>0?Math.round(t.active_devices/t.persons*100):0)+'%','green')}${m2('管控区域',t.zones,'电子围栏','orange')}${m2('今日轨迹记录',t.active_devices*12,'条/小时','purple')}</div>
+<div class="dashboard-grid"><div class="panel"><div class="panel-title"><div><span>REAL-TIME POSITIONING</span><h2>实时定位分布</h2></div></div>
+<div style="padding:14px 20px 20px"><div class="rule-grid" style="grid-template-columns:repeat(2,1fr)">${zones.map(z=>'<div class="task" style="margin:4px 0;grid-template-columns:3px 1fr"><i style="background:'+z.color+'"></i><div><span>'+z.zone+'</span><b>'+z.count+' 人</b><small>手环定位在线</small></div></div>').join('')}</div></div></div>
+<div class="panel"><div class="panel-title"><div><span>GEOFENCE EVENTS</span><h2>电子围栏事件</h2></div></div>
+<div style="padding:10px 20px 20px">${evts.map(e=>'<div class="task" style="margin:4px 0"><i style="background:var(--'+e.cls+')"></i><div><span>2026-08-22 '+e.t+'</span><b>'+e.title+'</b><small>'+e.desc+'</small></div><button class="badge '+e.cls+'" style="font-size:10px">'+e.lbl+'</button></div>').join('')}</div></div></div>
+`:`
+<div class="panel" style="min-height:300px;display:grid;place-items:center"><div style="text-align:center;padding:40px"><div class="brand-mark" style="width:48px;height:48px;margin:0 auto 12px;font-size:18px">${I.location}</div><h3 style="margin:0 0 6px">${u.name} · 人员轨迹</h3><p style="color:var(--muted);font-size:12px;max-width:450px;margin:0 auto">当前单位未部署人员定位设备。<br>切换到「监狱」单位查看电子手环、区域管控、轨迹追踪功能。</p></div></div>
+`}</div>`;
+}
+
+function m2(l,v,n,t) {
+  return `<div class="metric"><div class="metric-icon${t!=='blue'?' '+t:''}">${I.eye}</div><div><span>${l}</span><strong>${v}</strong><small>${n}</small></div></div>`;
+}
+function curUnitName() { return UNITS.find(x=>x.id===curUnit).name; }
+function data() { return UNIT_DATA[curUnit]; }
+function m(label,val,note,tone) { return `<div class="metric"><div class="metric-icon${tone!=='blue'?' '+tone:''}">${I.layer1}</div><div><span>${label}</span><strong>${val}</strong><small>${note}</small></div></div>`; }
+function chart(d) { const m=Math.max(...d,1); return `<div style="display:flex;align-items:flex-end;height:200px;padding:0 10px">${d.map((v,i)=>{const h=(v/m)*100;return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:180px"><div style="width:24px;height:${h}%;background:${i===1?'#176BEB':'#C9DCFA'};border-radius:5px 5px 0 0;transition:all .3s;min-height:${v>0?4:0}px"></div><span style="color:var(--muted);font-size:10px;margin-top:6px">${['9月','10月','11月','12月','1月','2月'][i]}</span></div>`;}).join('')}</div>`; }
+
+function sd(id) {
+  const d = data(), e = d.events.find(x=>x.id===id);
+  if(!e)return;
+  const el = document.createElement('div'); el.className='drawer open';
+  el.innerHTML=`<div class="drawer-head"><b>事件详情</b><button class="close-btn" onclick="this.closest('.drawer').remove()">&times;</button></div>
+<div class="drawer-body"><div class="info"><span>事件名称</span><b>${e.name}</b></div><div class="info-pair"><div class="info"><span>事件编号</span><b>${e.id}</b></div><div class="info"><span>类型</span><b>${e.type}</b></div></div><div class="info-pair"><div class="info"><span>责任人</span><b>${e.person}</b></div><div class="info"><span>时间</span><b>${e.date}</b></div></div><div class="info"><span>状态</span><b>${e.status}</b></div><div class="info"><span>冲突检测</span><b>${e.conflict>0?`${I.alert} ${e.conflict} 项法规冲突待处理`:`${I.check} 无冲突`}</b></div>
+<div class="info" style="margin-top:16px"><span>关联证据</span></div>
+<div class="file-box">${I.file}<div><b>证据材料.pdf</b><span>2.4 MB · 上传于 ${e.date}</span></div><button>${I.layer1} 预览</button></div>
+<div class="info" style="margin-top:16px"><span>操作记录</span></div>
+<div class="timeline"><div><i></i><span>${e.date} 14:00</span><b>事件录入</b><small>AI自动识别并入库</small></div><div><i style="background:var(--orange)"></i><span>${e.date} 14:05</span><b>法规校对完成</b><small>${e.conflict}项冲突标记</small></div></div></div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+}
+
+function ts() { sidebarOpen=!sidebarOpen; r(); }
+function td() { document.getElementById('unitDd')?.classList.toggle('hidden'); }
+function su(id) { curUnit=id; curPage='overview'; r(); }
+function sp(id) { curPage=id; if(window.innerWidth<=760)sidebarOpen=false; r(); }
+function t(msg) { const el=document.createElement('div'); el.className='toast'; el.innerHTML=`${I.check} ${msg}`; document.body.appendChild(el); setTimeout(()=>el.remove(),2500); }
+
+function attach() {
+  document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>sp(b.dataset.page)));
+  document.querySelectorAll('[data-unit]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();su(b.dataset.unit);document.getElementById('unitDd')?.classList.add('hidden');}));
+  document.addEventListener('click',e=>{if(!e.target.closest('.unit-btn'))document.getElementById('unitDd')?.classList.add('hidden');});
+}
+r();
+</script>
+</body>
+</html>
